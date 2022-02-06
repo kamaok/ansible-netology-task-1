@@ -436,3 +436,11 @@ for name in centos7 ubuntu fedorahost; do echo "Stopping and deleting $name cont
 ```
 
 6. Все изменения должны быть зафиксированы и отправлены в вашей личный репозиторий.
+```bash
+# git init
+# git add .
+# git commit -m "Initial commit"
+# git branch -M master
+# git remote add origin git@github.com:kamaok/ansible-netology-task-1.git
+# git push -u origin master
+```
