@@ -1,446 +1,359 @@
-# Домашнее задание к занятию "08.01 Введение в Ansible"
-
-## Подготовка к выполнению
-1. Установите ansible версии 2.10 или выше.
-2. Создайте свой собственный публичный репозиторий на github с произвольным именем.
-3. Скачайте [playbook](./playbook/) из репозитория с домашним заданием и перенесите его в свой репозиторий.
-
-## Основная часть
-1. Попробуйте запустить playbook на окружении из `test.yml`, зафиксируйте какое значение имеет факт `some_fact` для указанного хоста при выполнении playbook'a.
-
+5. Запустите `ansible-lint site.yml` и исправьте ошибки, если они есть.
 ```bash
-# ansible-playbook -i inventory/test.yml site.yml
-
-ok: [localhost]
-
-TASK [Print OS] ********************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "Ubuntu"
-}
-
-TASK [Print fact] ******************************************************************************************************************************
-ok: [localhost] => {
-    "msg": 12
-}
-
-PLAY RECAP *************************************************************************************************************************************
-localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+# ansible-lint site.yml
+WARNING  Overriding detected file kind 'yaml' with 'playbook' for given positional argument: site.yml
 ```
 
-Ответ: 12
-
-
-
-2. Найдите файл с переменными (group_vars) в котором задаётся найденное в первом пункте значение и поменяйте его на 'all default fact'.
+7. Запустите playbook на `prod.yml` окружении с флагом `--diff`. Убедитесь, что изменения на системе произведены.
 ```bash
-# sed -i  's/12/all default fact/g' group_vars/all/examp.yml
-```
-
-3. Воспользуйтесь подготовленным (используется `docker`) или создайте собственное окружение для проведения дальнейших испытаний.
-```bash
-# docker run --rm --name centos7 -d -it pycontribs/centos:7 bash
-```
-```bash
-# docker run --rm --name ubuntu -d -it pycontribs/ubuntu:latest bash
-```
-```bash
-# docker ps  | grep -E 'centos7|ubuntu'
-ef14a373a4c0   pycontribs/ubuntu:latest   "bash"    14 seconds ago       Up 12 seconds                 ubuntu
-0aa33e097966   pycontribs/centos:7        "bash"    About a minute ago   Up About a minute             centos7
-```
-
-
-4. Проведите запуск playbook на окружении из `prod.yml`. Зафиксируйте полученные значения `some_fact` для каждого из `managed host`.
-```bash
-# ansible-playbook -i inventory/prod.yml site.yml
-
-PLAY [Print os facts] **************************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-ok: [ubuntu]
-ok: [centos7]
-
-TASK [Print OS] ********************************************************************************************************************************
-ok: [centos7] => {
-    "msg": "CentOS"
-}
-ok: [ubuntu] => {
-    "msg": "Ubuntu"
-}
-
-TASK [Print fact] ******************************************************************************************************************************
-ok: [centos7] => {
-    "msg": "el"
-}
-ok: [ubuntu] => {
-    "msg": "deb"
-}
-
-PLAY RECAP *************************************************************************************************************************************
-centos7                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-ubuntu                     : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-```
-
-5. Добавьте факты в `group_vars` каждой из групп хостов так, чтобы для `some_fact` получились следующие значения: для `deb` - 'deb default fact', для `el` - 'el default fact'.
-
-```bash
-# sed -i  's/deb/deb default fact/g' group_vars/deb/examp.yml
-```
-```bash
-# cat group_vars/deb/examp.yml
----
-  some_fact: "deb default fact"
-```
-```bash
-# sed -i 's/el/el default fact/g' group_vars/el/examp.yml
-```
-```bash
-# cat group_vars/el/examp.yml
----
-  some_fact: "el default fact"
-```
-
-6.  Повторите запуск playbook на окружении `prod.yml`. Убедитесь, что выдаются корректные значения для всех хостов.
-
-```bash
-# ansible-playbook -i inventory/prod.yml site.yml
-
-PLAY [Print os facts] **************************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-ok: [ubuntu]
-ok: [centos7]
-
-TASK [Print OS] ********************************************************************************************************************************
-ok: [centos7] => {
-    "msg": "CentOS"
-}
-ok: [ubuntu] => {
-    "msg": "Ubuntu"
-}
-
-TASK [Print fact] ******************************************************************************************************************************
-ok: [centos7] => {
-    "msg": "el default fact"
-}
-ok: [ubuntu] => {
-    "msg": "deb default fact"
-}
-
-PLAY RECAP *************************************************************************************************************************************
-centos7                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-ubuntu                     : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-```
-
-7. При помощи `ansible-vault` зашифруйте факты в `group_vars/deb` и `group_vars/el` с паролем `netology`.
-
-```bash
-# ansible-vault encrypt group_vars/deb/examp.yml
-New Vault password:
-Confirm New Vault password:
-Encryption successful
-```
-```bash
-# ansible-vault encrypt group_vars/el/examp.yml
-New Vault password:
-Confirm New Vault password:
-Encryption successful
-```
-
-8. Запустите playbook на окружении `prod.yml`. При запуске `ansible` должен запросить у вас пароль. Убедитесь в работоспособности.
-
-```bash
-# ansible-playbook -i inventory/prod.yml site.yml --ask-vault-pass
-Vault password:
-
-PLAY [Print os facts] **************************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-ok: [ubuntu]
-ok: [centos7]
-
-TASK [Print OS] ********************************************************************************************************************************
-ok: [centos7] => {
-    "msg": "CentOS"
-}
-ok: [ubuntu] => {
-    "msg": "Ubuntu"
-}
-
-TASK [Print fact] ******************************************************************************************************************************
-ok: [centos7] => {
-    "msg": "el default fact"
-}
-ok: [ubuntu] => {
-    "msg": "deb default fact"
-}
-
-PLAY RECAP *************************************************************************************************************************************
-centos7                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-ubuntu                     : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-```
-
-
-9. Посмотрите при помощи `ansible-doc` список плагинов для подключения. Выберите подходящий для работы на `control node`.
-```bash
-# ansible-doc -t connection -l | grep local
-local                       execute on controller
-```
-
-10. В `prod.yml` добавьте новую группу хостов с именем  `local`, в ней разместите localhost с необходимым типом подключения.
-
-```bash
-# cat inventory/prod.yml
----
-  el:
-    hosts:
-      centos7:
-        ansible_connection: docker
-  deb:
-    hosts:
-      ubuntu:
-        ansible_connection: docker
-  local:
-    hosts:
-      localhost:
-        ansible_connection: local
-```
-
-11. Запустите playbook на окружении `prod.yml`. При запуске `ansible` должен запросить у вас пароль. Убедитесь что факты `some_fact` для каждого из хостов определены из верных `group_vars`.
-
-```bash
-# ansible-playbook -i inventory/prod.yml site.yml --ask-vault-pass
-Vault password:
-
-PLAY [Print os facts] **************************************************************************************************************************
+# ansible-playbook -i inventory/prod.yml site.yml --diff
+PLAY [Install Java] ****************************************************************************************************************************
 
 TASK [Gathering Facts] *************************************************************************************************************************
 ok: [localhost]
-ok: [ubuntu]
-ok: [centos7]
 
-TASK [Print OS] ********************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "Ubuntu"
-}
-ok: [centos7] => {
-    "msg": "CentOS"
-}
-ok: [ubuntu] => {
-    "msg": "Ubuntu"
-}
-
-TASK [Print fact] ******************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "all default fact"
-}
-ok: [centos7] => {
-    "msg": "el default fact"
-}
-ok: [ubuntu] => {
-    "msg": "deb default fact"
-}
-
-PLAY RECAP *************************************************************************************************************************************
-centos7                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-ubuntu                     : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-```
-
-
-12. Заполните `README.md` ответами на вопросы. Сделайте `git push` в ветку `master`. В ответе отправьте ссылку на ваш открытый репозиторий с изменённым `playbook` и заполненным `README.md`.
-
-## Необязательная часть
-
-1. При помощи `ansible-vault` расшифруйте все зашифрованные файлы с переменными.
-```bash
-# ansible-vault decrypt group_vars/el/examp.yml
-Vault password:
-Decryption successful
-```
-```bash
-# ansible-vault decrypt group_vars/deb/examp.yml
-Vault password:
-Decryption successful
-```
-
-2. Зашифруйте отдельное значение `PaSSw0rd` для переменной `some_fact` паролем `netology`. Добавьте полученное значение в `group_vars/all/exmp.yml`.
-
-```bash
-# echo -n "PaSSw0rd" | ansible-vault encrypt_string
-New Vault password:
-Confirm New Vault password:
-Reading plaintext input from stdin. (ctrl-d to end input, twice if your content does not already have a newline)
-
-!vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          63333730633831633739343430623061333062613235633335656534656137663366386562343535
-          6539396164336161626239643537316237383930346137320a636137393463376138343732633439
-          34356136336135623139666234343362666237383732306263386562373230353863316330613164
-          6435363465323531300a393831646530633237663237613563343736366430666537633233336264
-          3532
-Encryption successful
-```
-```bash
-# cat group_vars/all/examp.yml
----
-  some_fact: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          63333730633831633739343430623061333062613235633335656534656137663366386562343535
-          6539396164336161626239643537316237383930346137320a636137393463376138343732633439
-          34356136336135623139666234343362666237383732306263386562373230353863316330613164
-          6435363465323531300a393831646530633237663237613563343736366430666537633233336264
-          3532
-```
-
-3. Запустите `playbook`, убедитесь, что для нужных хостов применился новый `fact`.
-
-```bash
-# ansible-playbook -i inventory/prod.yml site.yml --ask-vault-password
-
-Vault password:
-
-PLAY [Print os facts] **************************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-
+TASK [Set facts for Java 11 vars] **************************************************************************************************************
 ok: [localhost]
-[
-ok: [ubuntu]
-ok: [centos7]
 
-TASK [Print OS] ********************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "Ubuntu"
-}
-ok: [centos7] => {
-    "msg": "CentOS"
-}
-ok: [ubuntu] => {
-    "msg": "Ubuntu"
-}
+TASK [Upload .tar.gz file containing binaries from local storage] ******************************************************************************
+diff skipped: source file size is greater than 104448
+changed: [localhost]
 
-TASK [Print fact] ******************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "PaSSw0rd"
-}
-ok: [centos7] => {
-    "msg": "el default fact"
-}
-ok: [ubuntu] => {
-    "msg": "deb default fact"
-}
+TASK [Ensure installation dir exists] **********************************************************************************************************
+--- before
++++ after
+@@ -1,4 +1,4 @@
+ {
+     "path": "/opt/jdk/11.0.14",
+-    "state": "absent"
++    "state": "directory"
+ }
 
-PLAY RECAP *************************************************************************************************************************************
-centos7                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-ubuntu                     : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-```
+changed: [localhost]
 
+TASK [Extract java in the installation directory] **********************************************************************************************
+changed: [localhost]
 
+TASK [Export environment variables] ************************************************************************************************************
+--- before
++++ after: /home/eugene/.ansible/tmp/ansible-local-18593jydyb3jh/tmpt973g0r0/jdk.sh.j2
+@@ -0,0 +1,5 @@
++# Warning: This file is Ansible Managed, manual changes will be overwritten on next playbook run.
++#!/usr/bin/env bash
++
++export JAVA_HOME=/opt/jdk/11.0.14
++export PATH=$PATH:$JAVA_HOME/bin
+\ No newline at end of file
 
-4. Добавьте новую группу хостов `fedora`, самостоятельно придумайте для неё переменную. В качестве образа можно использовать [этот](https://hub.docker.com/r/pycontribs/fedora).
+changed: [localhost]
 
-```bash
-# cat inventory/prod.yml
-
----
-  el:
-    hosts:
-      centos7:
-        ansible_connection: docker
-  deb:
-    hosts:
-      ubuntu:
-        ansible_connection: docker
-  local:
-    hosts:
-      localhost:
-        ansible_connection: local
-  fedora:
-    hosts:
-      fedorahost:
-        ansible_connection: docker
-```
-```bash
-# cat group_vars/fedora/examp.yml
----
-  some_fact: "fedora default fact"
-```
-```bash
-# docker run --rm --name fedorahost -d -it pycontribs/fedora bash
-```
-
-```bash
-# ansible-playbook -i inventory/prod.yml site.yml --ask-vault-password
-Vault password:
-
-PLAY [Print os facts] **************************************************************************************************************************
+PLAY [Install Elasticsearch] *******************************************************************************************************************
 
 TASK [Gathering Facts] *************************************************************************************************************************
 ok: [localhost]
-ok: [fedorahost]
-ok: [ubuntu]
-ok: [centos7]
 
-TASK [Print OS] ********************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "Ubuntu"
-}
-ok: [centos7] => {
-    "msg": "CentOS"
-}
-ok: [ubuntu] => {
-    "msg": "Ubuntu"
-}
-ok: [fedorahost] => {
-    "msg": "Fedora"
-}
+TASK [Upload tar.gz Elasticsearch from remote URL] *********************************************************************************************
+changed: [localhost]
 
-TASK [Print fact] ******************************************************************************************************************************
-ok: [localhost] => {
-    "msg": "PaSSw0rd"
-}
-ok: [centos7] => {
-    "msg": "el default fact"
-}
-ok: [ubuntu] => {
-    "msg": "deb default fact"
-}
-ok: [fedorahost] => {
-    "msg": "fedora default fact"
-}
+TASK [Create directrory for Elasticsearch] *****************************************************************************************************
+--- before
++++ after
+@@ -1,4 +1,4 @@
+ {
+     "path": "/opt/elastic/7.10.1",
+-    "state": "absent"
++    "state": "directory"
+ }
+
+changed: [localhost]
+
+TASK [Extract Elasticsearch in the installation directory] *************************************************************************************
+changed: [localhost]
+
+TASK [Set environment Elastic] *****************************************************************************************************************
+--- before
++++ after: /home/eugene/.ansible/tmp/ansible-local-18593jydyb3jh/tmp9vgivm17/elk.sh.j2
+@@ -0,0 +1,5 @@
++# Warning: This file is Ansible Managed, manual changes will be overwritten on next playbook run.
++#!/usr/bin/env bash
++
++export ES_HOME=/opt/elastic/7.10.1
++export PATH=$PATH:$ES_HOME/bin
+\ No newline at end of file
+
+changed: [localhost]
+
+PLAY [Install Kibana] **************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [localhost]
+
+TASK [Upload tar.gz Kibana from remote URL] ****************************************************************************************************
+changed: [localhost]
+
+TASK [Create directrory for Kibana] ************************************************************************************************************
+--- before
++++ after
+@@ -1,4 +1,4 @@
+ {
+     "path": "/opt/kibana/7.10.1",
+-    "state": "absent"
++    "state": "directory"
+ }
+
+changed: [localhost]
+
+TASK [Extract Kibana in the installation directory] ********************************************************************************************
+changed: [localhost]
+
+TASK [Create kibana configuration file] ********************************************************************************************************
+--- before: /opt/kibana/7.10.1/config/kibana.yml
++++ after: /home/eugene/.ansible/tmp/ansible-local-18593jydyb3jh/tmp05o8_c65/kibana.yml.j2
+@@ -1,107 +1,17 @@
+ # Kibana is served by a back end server. This setting specifies the port to use.
+-#server.port: 5601
++server.port: 5601
+
+ # Specifies the address to which the Kibana server will bind. IP addresses and host names are both valid values.
+ # The default is 'localhost', which usually means remote machines will not be able to connect.
+ # To allow connections from remote users, set this parameter to a non-loopback address.
+-#server.host: "localhost"
+-
+-# Enables you to specify a path to mount Kibana at if you are running behind a proxy.
+-# Use the `server.rewriteBasePath` setting to tell Kibana if it should remove the basePath
+-# from requests it receives, and to prevent a deprecation warning at startup.
+-# This setting cannot end in a slash.
+-#server.basePath: ""
+-
+-# Specifies whether Kibana should rewrite requests that are prefixed with
+-# `server.basePath` or require that they are rewritten by your reverse proxy.
+-# This setting was effectively always `false` before Kibana 6.3 and will
+-# default to `true` starting in Kibana 7.0.
+-#server.rewriteBasePath: false
+-
+-# The maximum payload size in bytes for incoming server requests.
+-#server.maxPayloadBytes: 1048576
++server.host: 0.0.0.0
+
+ # The Kibana server's name.  This is used for display purposes.
+-#server.name: "your-hostname"
++server.name: "My Kibana"
+
+ # The URLs of the Elasticsearch instances to use for all your queries.
+-#elasticsearch.hosts: ["http://localhost:9200"]
++elasticsearch.hosts: ["http://localhost:9200"]
+
+ # Kibana uses an index in Elasticsearch to store saved searches, visualizations and
+ # dashboards. Kibana creates a new index if the index doesn't already exist.
+-#kibana.index: ".kibana"
+-
+-# The default application to load.
+-#kibana.defaultAppId: "home"
+-
+-# If your Elasticsearch is protected with basic authentication, these settings provide
+-# the username and password that the Kibana server uses to perform maintenance on the Kibana
+-# index at startup. Your Kibana users still need to authenticate with Elasticsearch, which
+-# is proxied through the Kibana server.
+-#elasticsearch.username: "kibana_system"
+-#elasticsearch.password: "pass"
+-
+-# Enables SSL and paths to the PEM-format SSL certificate and SSL key files, respectively.
+-# These settings enable SSL for outgoing requests from the Kibana server to the browser.
+-#server.ssl.enabled: false
+-#server.ssl.certificate: /path/to/your/server.crt
+-#server.ssl.key: /path/to/your/server.key
+-
+-# Optional settings that provide the paths to the PEM-format SSL certificate and key files.
+-# These files are used to verify the identity of Kibana to Elasticsearch and are required when
+-# xpack.security.http.ssl.client_authentication in Elasticsearch is set to required.
+-#elasticsearch.ssl.certificate: /path/to/your/client.crt
+-#elasticsearch.ssl.key: /path/to/your/client.key
+-
+-# Optional setting that enables you to specify a path to the PEM file for the certificate
+-# authority for your Elasticsearch instance.
+-#elasticsearch.ssl.certificateAuthorities: [ "/path/to/your/CA.pem" ]
+-
+-# To disregard the validity of SSL certificates, change this setting's value to 'none'.
+-#elasticsearch.ssl.verificationMode: full
+-
+-# Time in milliseconds to wait for Elasticsearch to respond to pings. Defaults to the value of
+-# the elasticsearch.requestTimeout setting.
+-#elasticsearch.pingTimeout: 1500
+-
+-# Time in milliseconds to wait for responses from the back end or Elasticsearch. This value
+-# must be a positive integer.
+-#elasticsearch.requestTimeout: 30000
+-
+-# List of Kibana client-side headers to send to Elasticsearch. To send *no* client-side
+-# headers, set this value to [] (an empty list).
+-#elasticsearch.requestHeadersWhitelist: [ authorization ]
+-
+-# Header names and values that are sent to Elasticsearch. Any custom headers cannot be overwritten
+-# by client-side headers, regardless of the elasticsearch.requestHeadersWhitelist configuration.
+-#elasticsearch.customHeaders: {}
+-
+-# Time in milliseconds for Elasticsearch to wait for responses from shards. Set to 0 to disable.
+-#elasticsearch.shardTimeout: 30000
+-
+-# Logs queries sent to Elasticsearch. Requires logging.verbose set to true.
+-#elasticsearch.logQueries: false
+-
+-# Specifies the path where Kibana creates the process ID file.
+-#pid.file: /var/run/kibana.pid
+-
+-# Enables you to specify a file where Kibana stores log output.
+-#logging.dest: stdout
+-
+-# Set the value of this setting to true to suppress all logging output.
+-#logging.silent: false
+-
+-# Set the value of this setting to true to suppress all logging output other than error messages.
+-#logging.quiet: false
+-
+-# Set the value of this setting to true to log all events, including system usage information
+-# and all requests.
+-#logging.verbose: false
+-
+-# Set the interval in milliseconds to sample system and process performance
+-# metrics. Minimum is 100ms. Defaults to 5000.
+-#ops.interval: 5000
+-
+-# Specifies locale to be used for all localizable strings, dates and number formats.
+-# Supported languages are the following: English - en , by default , Chinese - zh-CN .
+-#i18n.locale: "en"
++kibana.index: ".kibana"
+
+changed: [localhost]
+
+TASK [Set environment Elastic] *****************************************************************************************************************
+--- before
++++ after: /home/eugene/.ansible/tmp/ansible-local-18593jydyb3jh/tmphbog3p8p/kibana.sh.j2
+@@ -0,0 +1,5 @@
++# Warning: This file is Ansible Managed, manual changes will be overwritten on next playbook run.
++#!/usr/bin/env bash
++
++export KIBANA_HOME=/opt/kibana/7.10.1
++export PATH=$PATH:$KIBANA_HOME/bin
+\ No newline at end of file
+
+changed: [localhost]
 
 PLAY RECAP *************************************************************************************************************************************
-centos7                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-fedorahost                 : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-ubuntu                     : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+localhost                  : ok=17   changed=13   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
-5. Напишите скрипт на bash: автоматизируйте поднятие необходимых контейнеров, запуск ansible-playbook и остановку контейнеров.
+
+
+
 
 ```bash
-# cat apply-playbook.sh
-#!/usr/bin/env bash
-
-echo "Starting containers..."
-docker run --rm --name centos7 -d -it pycontribs/centos:7 bash
-docker run --rm --name ubuntu -d -it pycontribs/ubuntu:latest bash
-docker run --rm --name fedorahost -d -it pycontribs/fedora bash
-
-ansible-playbook -i inventory/prod.yml site.yml --ask-vault-password
-
-echo "Deleting containers..."
-for name in centos7 ubuntu fedorahost; do echo "Stopping and deleting $name container"; docker stop $name; done
+# echo $JAVA_HOME
+/opt/jdk/11.0.14
+```
+```bash
+# echo $ES_HOME
+/opt/elastic/7.10.1
+```
+```bash
+# echo $KIBANA_HOME
+/opt/kibana/7.10.1
+```
+```bash
+# java -version
+java version "11.0.14" 2022-01-18 LTS
+Java(TM) SE Runtime Environment 18.9 (build 11.0.14+8-LTS-263)
+Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.14+8-LTS-263, mixed mode)
+```
+```bash
+# kibana --version
+7.10.1
 ```
 
-6. Все изменения должны быть зафиксированы и отправлены в вашей личный репозиторий.
 ```bash
-# git init
-# git add .
-# git commit -m "Initial commit"
-# git branch -M master
-# git remote add origin git@github.com:kamaok/ansible-netology-task-1.git
-# git push -u origin master
+cat /opt/kibana/7.10.1/config/kibana.yml
+# Kibana is served by a back end server. This setting specifies the port to use.
+server.port: 5601
+
+# Specifies the address to which the Kibana server will bind. IP addresses and host names are both valid values.
+# The default is 'localhost', which usually means remote machines will not be able to connect.
+# To allow connections from remote users, set this parameter to a non-loopback address.
+server.host: 0.0.0.0
+
+# The Kibana server's name.  This is used for display purposes.
+server.name: "My Kibana"
+
+# The URLs of the Elasticsearch instances to use for all your queries.
+elasticsearch.hosts: ["http://localhost:9200"]
+
+# Kibana uses an index in Elasticsearch to store saved searches, visualizations and
+# dashboards. Kibana creates a new index if the index doesn't already exist.
+kibana.index: ".kibana"
+```
+
+8. Повторно запустите playbook с флагом `--diff` и убедитесь, что playbook идемпотентен.
+
+
+```bash
+# ansible-playbook -i inventory/prod.yml site.yml --diff
+
+
+PLAY [Install Java] ****************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [localhost]
+
+TASK [Set facts for Java 11 vars] **************************************************************************************************************
+ok: [localhost]
+
+TASK [Upload .tar.gz file containing binaries from local storage] ******************************************************************************
+ok: [localhost]
+
+TASK [Ensure installation dir exists] **********************************************************************************************************
+ok: [localhost]
+
+TASK [Extract java in the installation directory] **********************************************************************************************
+skipping: [localhost]
+
+TASK [Export environment variables] ************************************************************************************************************
+ok: [localhost]
+
+PLAY [Install Elasticsearch] *******************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [localhost]
+
+TASK [Upload tar.gz Elasticsearch from remote URL] *********************************************************************************************
+ok: [localhost]
+
+TASK [Create directrory for Elasticsearch] *****************************************************************************************************
+ok: [localhost]
+
+TASK [Extract Elasticsearch in the installation directory] *************************************************************************************
+skipping: [localhost]
+
+TASK [Set environment Elastic] *****************************************************************************************************************
+ok: [localhost]
+
+PLAY [Install Kibana] **************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [localhost]
+
+TASK [Upload tar.gz Kibana from remote URL] ****************************************************************************************************
+ok: [localhost]
+
+TASK [Create directrory for Kibana] ************************************************************************************************************
+ok: [localhost]
+
+TASK [Extract Kibana in the installation directory] ********************************************************************************************
+skipping: [localhost]
+
+TASK [Create kibana configuration file] ********************************************************************************************************
+ok: [localhost]
+
+TASK [Set environment Elastic] *****************************************************************************************************************
+ok: [localhost]
+
+PLAY RECAP *************************************************************************************************************************************
+localhost                  : ok=14   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
 ```

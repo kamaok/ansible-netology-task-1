@@ -1,40 +1,54 @@
-# Самоконтроль выполненения задания
+## Установка Java, Elastic и Kibana
 
-1. Где расположен файл с `some_fact` из второго пункта задания?
+### Запуск playbook-а
 
-   В файле `group_vars/all/examp.yml`
+- для установки Java+Elastic+Kibana
+   ```bash
+   # ansible-playbook -i inventory/prod.yml site.yml
+   ```
 
-2. Какая команда нужна для запуска вашего `playbook` на окружении `test.yml`?
-```bash
-ansible-playbook -i inventory/test.yml site.yml
-```
-3. Какой командой можно зашифровать файл?
-```bash
-ansible encrypt path_to_file
-```
-4. Какой командой можно расшифровать файл?
-```bash
-ansible decrypt path_to_file
-```
-5. Можно ли посмотреть содержимое зашифрованного файла без команды расшифровки файла? Если можно, то как?
-Да, с помощью команды
-```bash
-ansible-vault view path_to_encrypt_file
-```
-6. Как выглядит команда запуска `playbook`, если переменные зашифрованы?
-```bash
-ansible-playbook -i inventory/test.yml site.yml --ask-vault-pass
-```
-7. Как называется модуль подключения к host на windows?
-`winrm`
-```bash
-ansible-doc -t connection -l | grep winrm
-winrm   Run tasks over Microsoft's WinRM
-```
-8. Приведите полный текст команды для поиска информации в документации ansible для модуля подключений ssh
-```bash
-ansible-doc -t connection ssh
-```
-9. Какой параметр из модуля подключения `ssh` необходим для того, чтобы определить пользователя, под которым необходимо совершать подключение?
+- для установки только Java
+   ```bash
+   # ansible-playbook -i inventory/prod.yml site.yml --tags java
+   ```
 
-   `remote_user`
+- для установки только Elastic
+   ```bash
+   # ansible-playbook -i inventory/prod.yml site.yml --tags elastic
+   ```
+
+- для установки только Kibana
+   ```bash
+   # ansible-playbook -i inventory/prod.yml site.yml --tags kibana
+   ```
+
+### Доступные параметры(переменные):
+```bash
+Java
+```
+
+`java_jdk_version` - версия устанавлвиаемой java
+
+```bash
+Elastic
+```
+
+`elastic_version`  - версия Elastic
+
+`elastic_home` - каталог установки Elastic
+
+```bash
+Kibana
+```
+
+`kibana_version` - версия Kibana
+
+`kibana_home`  - каталог установки Kibana
+
+`kibana_server_port` - порт, на котором будет запущена Kibana
+
+`kibana_server_host` - интерфейс, на котором будет запущена Kibana
+
+`kibana_server_name` - отображаемое имя Kibana сервера
+
+`kibana_elasticsearch_hosts` - URL, на котором доступен Elasticsearch
