@@ -1,118 +1,231 @@
-Проверка плейбука линтером
+Скачиваем необходимые роли
 ```bash
-# ansible-lint site.yml
-WARNING  Overriding detected file kind 'yaml' with 'playbook' for given positional argument: site.yml
+# ansible-galaxy role  install -r requirements.yml -p roles
+Starting galaxy role install process
+- extracting elastic to /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/elastic
+- elastic (2.1.4) was installed successfully
+- extracting kibana-role to /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/kibana-role
+- kibana-role (0.0.1) was installed successfully
+- extracting filebeat-role to /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/filebeat-role
+- filebeat-role (0.0.1) was installed successfully
+```
+```bash
+# tree -L 2
+.
+├── inventory
+│   └── hosts.yml
+├── playbook.yml
+├── README.md
+├── README-step-by-step.md
+├── requirements.yml
+└── roles
+    ├── elastic
+    ├── filebeat-role
+    └── kibana-role
 ```
 
-Проверка идемпотентности плейбука
+
+
+Проверяем доступ к серверам с ansible-сервера
 ```bash
-# ansible-playbook -i inventory/prod/ site.yml --diff
+# ansible -u eugene -i inventory/hosts.yml -m ping all
+The authenticity of host '51.250.13.180 (51.250.13.180)' can't be established.
+ECDSA key fingerprint is SHA256:K4OxQHPXR1XgyiOp7wBaBU7vn3tNZpPjYfQ+sM1T3Nc.
+Are you sure you want to continue connecting (yes/no)? The authenticity of host '51.250.5.174 (51.250.5.174)' can't be established.
+ECDSA key fingerprint is SHA256:UcV7ZozXhUveXgAovJsU/3iNVFvV40fcMsDOOUduKJc.
+Are you sure you want to continue connecting (yes/no)? The authenticity of host '51.250.11.88 (51.250.11.88)' can't be established.
+ECDSA key fingerprint is SHA256:A7nLAlDUJ1UQ25qQ4UW8eNguC26fBG2bS2H1M0M7b/c.
+Are you sure you want to continue connecting (yes/no)? yes
+yes
+yes
 
-PLAY [Install Elasticsearch] *******************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-ok: [elastic-instance]
-
-TASK [Download Elasticsearch's rpm] ************************************************************************************************************
-ok: [elastic-instance]
-
-TASK [Install Elasticsearch] *******************************************************************************************************************
-ok: [elastic-instance]
-
-TASK [Configure Elasticsearch] *****************************************************************************************************************
-ok: [elastic-instance]
-
-PLAY [Install Kibana] **************************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-ok: [kibana-instance]
-
-TASK [Download Kibana's rpm] *******************************************************************************************************************
-ok: [kibana-instance]
-
-TASK [Install Kibana] **************************************************************************************************************************
-ok: [kibana-instance]
-
-TASK [Configure Kibana] ************************************************************************************************************************
-ok: [kibana-instance]
-
-PLAY [Install Filebeat] ************************************************************************************************************************
-
-TASK [Gathering Facts] *************************************************************************************************************************
-ok: [filebeat-instance]
-
-TASK [Download Filebeat's rpm] *****************************************************************************************************************
-ok: [filebeat-instance]
-
-TASK [Install Filebeat] ************************************************************************************************************************
-ok: [filebeat-instance]
-
-TASK [Configure Filebeat] **********************************************************************************************************************
-ok: [filebeat-instance]
-
-TASK [Set filebeat to collect system logs] *****************************************************************************************************
-ok: [filebeat-instance]
-
-PLAY RECAP *************************************************************************************************************************************
-elastic-instance           : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-filebeat-instance          : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-kibana-instance            : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-```
-
-Проверка доступности ElasticSearch
-```bash
-# ssh eugene@51.250.9.175 curl -s localhost:9200
-{
-  "name" : "node-a",
-  "cluster_name" : "elasticsearch",
-  "cluster_uuid" : "0ieKDBgJQ7-no9jlwzlqzw",
-  "version" : {
-    "number" : "7.17.0",
-    "build_flavor" : "default",
-    "build_type" : "rpm",
-    "build_hash" : "bee86328705acaa9a6daede7140defd4d9ec56bd",
-    "build_date" : "2022-01-28T08:36:04.875279988Z",
-    "build_snapshot" : false,
-    "lucene_version" : "8.11.1",
-    "minimum_wire_compatibility_version" : "6.8.0",
-    "minimum_index_compatibility_version" : "6.0.0-beta1"
-  },
-  "tagline" : "You Know, for Search"
+filebeat-instance | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+elastic-instance | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+kibana-instance | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "changed": false,
+    "ping": "pong"
 }
 ```
 
-Проверка доступности Kibana
+
+Запускаем плейбук и устанавливаем ElasticSearch+Kibana+Filebeat на соответствующие хосты
 ```bash
-# ssh eugene@51.250.8.194 curl -vvv -s localhost:5601
-* About to connect() to localhost port 5601 (#0)
-*   Trying ::1...
-* Connection refused
-*   Trying 127.0.0.1...
-* Connected to localhost (127.0.0.1) port 5601 (#0)
-> GET / HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: localhost:5601
-> Accept: */*
->
-< HTTP/1.1 302 Found
-< location: /spaces/enter
-< x-content-type-options: nosniff
-< referrer-policy: no-referrer-when-downgrade
-< kbn-name: My Kibana
-< kbn-license-sig: e3691c09283592fdeb21cb4bc401e8cad0c86f4e4b55a78141f8c117169f16e1
-< cache-control: private, no-cache, no-store, must-revalidate
-< content-length: 0
-< Date: Sat, 12 Feb 2022 22:05:36 GMT
-< Connection: keep-alive
-< Keep-Alive: timeout=120
-<
-* Connection #0 to host localhost left intact
+# ansible-playbook -i inventory/hosts.yml playbook.yml
+
+PLAY [elasticsearch] ***************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [elastic-instance]
+
+TASK [elastic : Fail if unsupported system detected] *******************************************************************************************
+skipping: [elastic-instance]
+
+TASK [elastic : Check files directory exists] **************************************************************************************************
+changed: [elastic-instance -> localhost]
+
+TASK [elastic : include_tasks] *****************************************************************************************************************
+included: /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/elastic/tasks/download_yum.yml for elastic-instance
+
+TASK [elastic : Download Elasticsearch's rpm] **************************************************************************************************
+changed: [elastic-instance -> localhost]
+
+TASK [elastic : Copy Elasticsearch to managed node] ********************************************************************************************
+changed: [elastic-instance]
+
+TASK [elastic : include_tasks] *****************************************************************************************************************
+included: /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/elastic/tasks/install_yum.yml for elastic-instance
+
+TASK [elastic : Install Elasticsearch] *********************************************************************************************************
+changed: [elastic-instance]
+
+TASK [elastic : Configure Elasticsearch] *******************************************************************************************************
+changed: [elastic-instance]
+
+RUNNING HANDLER [elastic : restart Elasticsearch] **********************************************************************************************
+changed: [elastic-instance]
+
+PLAY [kibana] **********************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [kibana-instance]
+
+TASK [kibana-role : Fail if unsupported system detected] ***************************************************************************************
+skipping: [kibana-instance]
+
+TASK [kibana-role : include_tasks] *************************************************************************************************************
+included: /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/kibana-role/tasks/download_and_install.yml for kibana-instance
+
+TASK [kibana-role : Download Kibana's rpm] *****************************************************************************************************
+changed: [kibana-instance]
+
+TASK [kibana-role : Install Kibana] ************************************************************************************************************
+changed: [kibana-instance]
+
+TASK [kibana-role : Configure Kibana] **********************************************************************************************************
+changed: [kibana-instance]
+
+RUNNING HANDLER [kibana-role : restart Kibana] *************************************************************************************************
+changed: [kibana-instance]
+
+PLAY [filebeat] ********************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [filebeat-instance]
+
+TASK [filebeat-role : Fail if unsupported system detected] *************************************************************************************
+skipping: [filebeat-instance]
+
+TASK [filebeat-role : include_tasks] ***********************************************************************************************************
+included: /home/eugene/Work/Projects/Netology/ansible-tasks-repo/roles/filebeat-role/tasks/download_and_install.yml for filebeat-instance
+
+TASK [filebeat-role : Download Filebeat's rpm] *************************************************************************************************
+changed: [filebeat-instance]
+
+TASK [filebeat-role : Install Filebeat] ********************************************************************************************************
+changed: [filebeat-instance]
+
+TASK [filebeat-role : Configure Filebeat] ******************************************************************************************************
+changed: [filebeat-instance]
+
+TASK [filebeat-role : Set filebeat to collect system logs] *************************************************************************************
+changed: [filebeat-instance]
+
+RUNNING HANDLER [filebeat-role : restart Filebeat] *********************************************************************************************
+changed: [filebeat-instance]
 ```
 
-Проверка доступности Filebeat
+Проверяем запущенный Elasticsearch
+
 ```bash
-# ssh eugene@51.250.5.192 ps aux | grep filebeat
-root      8877  0.1  4.6 1032700 181364 ?      Ssl  21:41   0:02 /usr/share/filebeat/bin/filebeat --environment systemd -c /etc/filebeat/filebeat.yml --path.home /usr/share/filebeat --path.config /etc/filebeat --path.data /var/lib/filebeat --path.logs /var/log/filebeat
+# ssh eugene@51.250.13.180
 ```
+```bash
+# cat /etc/elasticsearch/elasticsearch.yml
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+network.host: 0.0.0.0
+discovery.seed_hosts: ["10.128.0.25"]
+node.name: node-a
+cluster.initial_master_nodes:
+   - node-a
+```
+```bash
+# systemctl status elasticsearch
+● elasticsearch.service - Elasticsearch
+   Loaded: loaded (/usr/lib/systemd/system/elasticsearch.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sat 2022-02-19 22:40:49 UTC; 13s ago
+     Docs: https://www.elastic.co
+ Main PID: 8535 (java)
+   CGroup: /system.slice/elasticsearch.service
+           ├─8535 /usr/share/elasticsearch/jdk/bin/java -Xshare:auto -Des.networkaddress.cache.ttl=60 -Des.networkaddress.cache.negative.ttl=...
+           └─8732 /usr/share/elasticsearch/modules/x-pack-ml/platform/linux-x86_64/bin/controller
+
+Feb 19 22:40:24 elastic-instance.ru-central1.internal systemd[1]: Starting Elasticsearch...
+Feb 19 22:40:49 elastic-instance.ru-central1.internal systemd[1]: Started Elasticsearch.
+```
+
+Проверяем запущенную Kibana
+
+```bash
+# ssh eugene@51.250.5.174
+```
+```bash
+# cat /etc/kibana/kibana.yml
+server.port: 5601
+server.host: 0.0.0.0
+server.name: "My Kibana"
+
+elasticsearch.hosts: ["http://10.128.0.25:9200"]
+
+kibana.index: ".kibana"
+```
+
+```bash
+# systemctl status kibana
+● kibana.service - Kibana
+   Loaded: loaded (/etc/systemd/system/kibana.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sat 2022-02-19 22:48:11 UTC; 10s ago
+     Docs: https://www.elastic.co
+ Main PID: 8536 (node)
+   CGroup: /system.slice/kibana.service
+           └─8536 /usr/share/kibana/bin/../node/bin/node /usr/share/kibana/bin/../src/cli/dist --logging.dest="/var/log/kibana/kibana.log" --...
+
+Feb 19 22:48:11 kibana-instance.ru-central1.internal systemd[1]: Started Kibana.
+```
+
+Проверяем запущенный Filebeat
+
+```bash
+ssh eugene@51.250.11.88
+```
+```bash
+# cat /etc/filebeat/filebeat.yml
+output.elasticsearch:
+  hosts: ["http://10.128.0.25:9200"]
+setup.kibana:
+    host: ["http://10.128.0.6:5601"]
+filebeat.config.modules.path: ${path.config}/modules.d/*.yml
+```
+```bash
+# ps aux | grep [f]ilebeat
+root      8493  5.1  4.8 1098236 189912 ?      Ssl  22:54   0:01 /usr/share/filebeat/bin/filebeat --environment systemd -c /etc/filebeat/filebeat.yml --path.home /usr/share/filebeat --path.config /etc/filebeat --path.data /var/lib/filebeat --path.logs /var/log/filebeat
+```
+
+
 
 [Просмотр логов в Kibana](img/kibana.png)

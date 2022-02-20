@@ -1,44 +1,24 @@
-## Установка Elastic,Kibana и Filebeat
-
-### Запуск playbook-а
-
-- для установки Elastic+Kibana+Filebeat
-   ```bash
-   # ansible-playbook -i inventory/prod.yml site.yml
-   ```
-
-
-
-- для установки только Elastic
-   ```bash
-   # ansible-playbook -i inventory/prod.yml site.yml --tags elastic
-   ```
-
-- для установки только Kibana
-   ```bash
-   # ansible-playbook -i inventory/prod.yml site.yml --tags kibana
-   ```
-
-- для установки только Filebeat
-   ```bash
-   # ansible-playbook -i inventory/prod.yml site.yml --tags filebeat
-   ```
-
-### Доступные параметры(переменные):
-
+Скачиваем необходимые роли
 ```bash
-Elastic/Kibana/Filebeat
+# ansible-galaxy role  install -r requirements.yml -p roles
 ```
 
-`elk_stack_version`  - версия Elastic/Kibana/Filebeat
-
-
+Запускаем плейбук и устанавливаем ElasticSearch+Kibana+Filebeat на соответствующие хосты
 ```bash
-Kibana
+# ansible-playbook -i inventory/hosts.yml playbook.yml
 ```
 
-`kibana_server_port` - порт, на котором будет запущена Kibana
+Установка только Elasticsearch
+```bash
+# ansible-playbook -i inventory/hosts.yml playbook.yml --tags "elastic"
+```
 
-`kibana_server_host` - интерфейс, на котором будет запущена Kibana
+Установка только Kibana
+```bash
+# ansible-playbook -i inventory/hosts.yml playbook.yml --tags "kibana"
+```
 
-`kibana_server_name` - отображаемое имя Kibana сервера
+Установка только Filebeat
+```bash
+# ansible-playbook -i inventory/hosts.yml playbook.yml --tags "filebeat"
+```
